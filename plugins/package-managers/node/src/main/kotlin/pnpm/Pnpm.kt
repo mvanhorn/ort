@@ -116,6 +116,7 @@ class Pnpm(override val descriptor: PluginDescriptor = PnpmFactory.descriptor) :
         moduleInfoResolver.workingDir = workingDir
         val scopes = Scope.entries.filterNot { scope -> scope.isExcluded(excludes, includes) }
 
+        configureNodeLinker(workingDir)
         installDependencies(workingDir, scopes)
 
         val workspaceModuleDirs = getWorkspaceModuleDirs(workingDir)
@@ -137,6 +138,13 @@ class Pnpm(override val descriptor: PluginDescriptor = PnpmFactory.descriptor) :
                 packages = emptySet()
             )
         }
+    }
+
+    private fun configureNodeLinker(workingDir: File) {
+        // Always use the 'isolated' (default) node linker, to not have to deal with multiple ways of
+        // module file organization.
+        val args = listOf("config", "set", "node-linker", "isolated", "--location", "project").toTypedArray()
+        PnpmCommand.run(workingDir, *args).requireSuccess()
     }
 
     private fun getWorkspaceModuleDirs(workingDir: File): Set<File> {
